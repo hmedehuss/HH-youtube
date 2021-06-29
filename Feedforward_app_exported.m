@@ -132,7 +132,7 @@ classdef Feedforward_app_exported < matlab.apps.AppBase
             m = app.massekgEditField.Value; % kg
             
             
-            mdl = 'Models_PID_Feedback';
+            mdl = 'Models_PID_FF';
             open_system(mdl);
             in(1:2) = Simulink.SimulationInput(mdl);
             in(1:2) = in(1:2).setVariable('g', g);
