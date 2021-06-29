@@ -1,4 +1,4 @@
-classdef app2_exported < matlab.apps.AppBase
+classdef Feedforward_app_exported < matlab.apps.AppBase
 
     % Properties that correspond to app components
     properties (Access = public)
@@ -12,6 +12,7 @@ classdef app2_exported < matlab.apps.AppBase
         RunsimulationButton    matlab.ui.control.Button
         ParameterSweep         matlab.ui.control.Table
         MasseSweepButton       matlab.ui.control.Button
+        CompareFFButton        matlab.ui.control.Button
     end
 
     % Callbacks that handle component events
@@ -120,6 +121,58 @@ classdef app2_exported < matlab.apps.AppBase
             
             Simulink.sdi.view
         end
+
+        % Button pushed function: CompareFFButton
+        function CompareFFButtonPushed(app, event)
+            g = 9.8; % m/s2
+            c = app.cNmradsEditField.Value; % Nm/rad/s
+            L = app.LmEditField.Value; % m
+            theta0 = 0; % rad
+            thetadot0 =0; %rad/s
+            m = app.massekgEditField.Value; % kg
+            
+            
+            mdl = 'Models_PID_Feedback';
+            open_system(mdl);
+            in(1:2) = Simulink.SimulationInput(mdl);
+            in(1:2) = in(1:2).setVariable('g', g);
+            in(1:2) = in(1:2).setVariable('L', L);
+            in(1:2) = in(1:2).setVariable('c', c);
+            in(1:2) = in(1:2).setVariable('theta0', theta0);
+            in(1:2) = in(1:2).setVariable('thetadot0', thetadot0);
+            in(1) = in(1).setVariable('Activate_FF', false);
+            in(2) = in(2).setVariable('Activate_FF', true);
+           
+            
+            Simulink.sdi.clear;
+            Simulink.sdi.setSubPlotLayout(2,1);
+
+           
+           
+            
+            
+            
+            for i=1:2
+                out(i) = sim(in(i));
+                Run = Simulink.sdi.Run.create;
+                if i==1
+                Run.Name = 'No FF'; 
+                else Run.Name = 'FF' ;
+                end
+             
+                Att = out(i).Att;
+                add(Run, 'vars', Att);
+                thetaid = getSignalIDsByName(Run, 'theta');
+                Dthetaid = getSignalIDsByName(Run, 'Dtheta');
+                theta = Simulink.sdi.getSignal(thetaid);
+                Dtheta = Simulink.sdi.getSignal(Dthetaid);
+                plotOnSubPlot(theta,1,1,true);
+                plotOnSubPlot(Dtheta,2,1,true);
+            end
+            
+            
+            Simulink.sdi.view
+        end
     end
 
     % Component initialization
@@ -169,7 +222,7 @@ classdef app2_exported < matlab.apps.AppBase
             % Create RunsimulationButton
             app.RunsimulationButton = uibutton(app.UIFigure, 'push');
             app.RunsimulationButton.ButtonPushedFcn = createCallbackFcn(app, @RunsimulationButtonPushed, true);
-            app.RunsimulationButton.Position = [127 33 100 22];
+            app.RunsimulationButton.Position = [64 33 100 22];
             app.RunsimulationButton.Text = 'Run simulation';
 
             % Create ParameterSweep
@@ -182,8 +235,14 @@ classdef app2_exported < matlab.apps.AppBase
             % Create MasseSweepButton
             app.MasseSweepButton = uibutton(app.UIFigure, 'push');
             app.MasseSweepButton.ButtonPushedFcn = createCallbackFcn(app, @MasseSweepButtonPushed, true);
-            app.MasseSweepButton.Position = [345 33 100 22];
+            app.MasseSweepButton.Position = [271 33 100 22];
             app.MasseSweepButton.Text = 'Masse Sweep';
+
+            % Create CompareFFButton
+            app.CompareFFButton = uibutton(app.UIFigure, 'push');
+            app.CompareFFButton.ButtonPushedFcn = createCallbackFcn(app, @CompareFFButtonPushed, true);
+            app.CompareFFButton.Position = [464 33 100 22];
+            app.CompareFFButton.Text = 'Compare FF';
 
             % Show the figure after all components are created
             app.UIFigure.Visible = 'on';
@@ -194,7 +253,7 @@ classdef app2_exported < matlab.apps.AppBase
     methods (Access = public)
 
         % Construct app
-        function app = app2_exported
+        function app = Feedforward_app_exported
 
             % Create UIFigure and components
             createComponents(app)
